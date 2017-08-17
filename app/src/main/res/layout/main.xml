@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="5dp"
+    tools:context=".Main">
+    <ImageButton
+        android:id="@+id/playBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="clickPlayButton"
+        android:elevation="0dp"
+        android:background="@null"
+        app:srcCompat="@drawable/button_grey_play"
+        android:layout_marginStart="53dp" />
+
+    <TextView
+        android:id="@+id/CurrentHeader"
+        android:text="@string/currentSongHeader"
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="160dp"/>
+
+    <TextView
+        android:id="@+id/CurrentSong"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:layout_below="@+id/CurrentHeader"
+        android:layout_toEndOf="@+id/CurrentHeader"
+        android:layout_alignTop="@+id/CurrentHeader"
+        android:layout_marginStart="10dp" />
+
+    <TextView
+        android:id="@+id/LastHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:editable="true"
+        android:text="@string/lastSongsHeader"
+        android:textStyle="bold"
+        android:layout_centerVertical="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/CurrentHeader"
+        android:layout_marginTop="10dp"/>
+
+    <TextView
+        android:id="@+id/LastSongs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:editable="true"
+        android:text=""
+        android:layout_centerVertical="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/LastHeader"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="50dp"/>
+</RelativeLayout>

@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">RadioTakt</string>
+    <string name="currentSongHeader">Зараз в ефірі:</string>
+    <string name="lastSongsHeader">Раніше в ефірі були:</string>
+</resources>
