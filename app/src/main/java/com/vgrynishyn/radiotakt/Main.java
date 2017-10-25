@@ -4,9 +4,11 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.io.BufferedInputStream;
@@ -17,33 +19,84 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+// TODO: move MediaPlayer to service
+// TODO: move get play list to thread
 
-
-public class Main extends AppCompatActivity{
+public class Main extends AppCompatActivity implements MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnCompletionListener{
 
     final String DATA_HTTP="http://radiotakt.com.ua:8000/takt.mp3";
     final String DATA_OLAY_LIST="http://radiotakt.com.ua/player";
     final String lastSongId = "id=\"last_song";
-    ImageButton playBtn;
+
+    ImageButton btnPlay;
     MediaPlayer mediaPlayer;
     AudioManager audioManager;
     TextView tvCurrentSong;
     TextView tvLastSongs;
+    private Timer mTimer;
+    private MyTimerTask mMyTimerTask;
+    ProgressBar progressBar;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        playBtn = (ImageButton) findViewById(R.id.playBtn);
+        btnPlay = (ImageButton) findViewById(R.id.btnPlay);
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         mediaPlayer = new MediaPlayer();
+        mediaPlayer.setOnBufferingUpdateListener(this);
+        mediaPlayer.setOnCompletionListener(this);
     }
 
     public void clickPlayButton(View view) {
-        new RetrieveListOfStrings().execute();
+        progressBar.setVisibility(ProgressBar.VISIBLE);
+        if(!mediaPlayer.isPlaying()){
+            btnPlay.setImageResource(R.drawable.player_stop);}
+        else{
+            btnPlay.setImageResource(R.drawable.player_play);
+            }
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                mTimer = new Timer();
+                mMyTimerTask = new MyTimerTask();
+                if(!mediaPlayer.isPlaying()){
+                    mTimer.schedule(mMyTimerTask, 30000, 5000);
+                    try {
+                        mediaPlayer.setDataSource(DATA_HTTP);
+                        mediaPlayer.prepareAsync();
+                        mediaPlayer.start();
+                        //MediaPlayer.TrackInfo[] ti = mediaPlayer.getTrackInfo();
+                        //int i=0;
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                else {
+                    mediaPlayer.pause();
+                    mTimer.cancel();
+//                    if (progressBar.getVisibility() == progressBar.VISIBLE) {
+//                        progressBar.setVisibility(ProgressBar.INVISIBLE);}
+                }
+            }
+        });
+        t.start();
+        //progressBar.setVisibility(ProgressBar.INVISIBLE);
     }
 
-  private class RetrieveListOfStrings extends AsyncTask<String, Void, List<String>> implements RetrieveListOfStringsInterface {
+    class MyTimerTask extends TimerTask {
+        @Override
+        public void run() {
+           new RetrieveListOfStrings().execute();
+        }
+    }
+
+    private class RetrieveListOfStrings extends AsyncTask<String, Void, List<String>> implements RetrieveListOfStringsInterface {
       @Override
       protected List<String> doInBackground(String ... params) {
           List<String> pageStrings = new ArrayList<>();
@@ -72,11 +125,24 @@ public class Main extends AppCompatActivity{
           String currentSong = getListOfLastSongsFromHTMLString(ls.get(0), ">", "<" ,"</span><span>", 1);
           String lastSongs = getListOfLastSongsFromHTMLString(ls.get(1), "<span>", "</span>" ,"</span><span>", 6);
           tvCurrentSong.setText(currentSong);
+          //tvLastSongs.setInputType(InputType.TYPE_CLASS_TEXT);
           tvLastSongs.setText("- "+lastSongs);
+          if (progressBar.getVisibility() == progressBar.VISIBLE) {
+                        progressBar.setVisibility(ProgressBar.INVISIBLE);}
       }
       private String getListOfLastSongsFromHTMLString(String str, String firstCut, String LastCut ,String delimiter, int cut){
           return str.substring(str.indexOf(firstCut)+cut, str.lastIndexOf(LastCut)).replace(delimiter, "\n- ");
       }
   }
+
+    @Override
+    public void onBufferingUpdate(MediaPlayer mp, int percent) {
+
+    }
+
+    @Override
+    public void onCompletion(MediaPlayer mp) {
+
+    }
 
 }
