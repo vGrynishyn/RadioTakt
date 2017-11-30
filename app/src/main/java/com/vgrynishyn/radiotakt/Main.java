@@ -1,10 +1,10 @@
 package com.vgrynishyn.radiotakt;
 
+import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ImageButton;
@@ -21,13 +21,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-// TODO: move MediaPlayer to service
-// TODO: move get play list to thread
 
 public class Main extends AppCompatActivity implements MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnCompletionListener{
 
     final String DATA_HTTP="http://radiotakt.com.ua:8000/takt.mp3";
-    final String DATA_OLAY_LIST="http://radiotakt.com.ua/player";
+    final String DATA_PLAY_LIST="http://radiotakt.com.ua/player";
     final String lastSongId = "id=\"last_song";
 
     ImageButton btnPlay;
@@ -49,16 +47,19 @@ public class Main extends AppCompatActivity implements MediaPlayer.OnBufferingUp
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setOnBufferingUpdateListener(this);
-        mediaPlayer.setOnCompletionListener(this);
+
     }
 
     public void clickPlayButton(View view) {
-        progressBar.setVisibility(ProgressBar.VISIBLE);
-        if(!mediaPlayer.isPlaying()){
+        if (progressBar.getVisibility() == progressBar.INVISIBLE && !mediaPlayer.isPlaying())
+        {
+            progressBar.setVisibility(ProgressBar.VISIBLE);
+        }
+       if(!mediaPlayer.isPlaying()){
             btnPlay.setImageResource(R.drawable.player_stop);}
         else{
             btnPlay.setImageResource(R.drawable.player_play);
-            }
+        }
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -68,25 +69,22 @@ public class Main extends AppCompatActivity implements MediaPlayer.OnBufferingUp
                     mTimer.schedule(mMyTimerTask, 30000, 5000);
                     try {
                         mediaPlayer.setDataSource(DATA_HTTP);
-                        mediaPlayer.prepareAsync();
+                        mediaPlayer.prepare();
                         mediaPlayer.start();
-                        //MediaPlayer.TrackInfo[] ti = mediaPlayer.getTrackInfo();
-                        //int i=0;
                     }
                     catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
                 else {
-                    mediaPlayer.pause();
+                    mediaPlayer.stop();
+                    mediaPlayer.release();
+                    mediaPlayer=new MediaPlayer();
                     mTimer.cancel();
-//                    if (progressBar.getVisibility() == progressBar.VISIBLE) {
-//                        progressBar.setVisibility(ProgressBar.INVISIBLE);}
                 }
             }
         });
         t.start();
-        //progressBar.setVisibility(ProgressBar.INVISIBLE);
     }
 
     class MyTimerTask extends TimerTask {
@@ -101,7 +99,7 @@ public class Main extends AppCompatActivity implements MediaPlayer.OnBufferingUp
       protected List<String> doInBackground(String ... params) {
           List<String> pageStrings = new ArrayList<>();
          try {
-              URL url = new URL(DATA_OLAY_LIST);
+              URL url = new URL(DATA_PLAY_LIST);
 
               HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
               InputStream in = new BufferedInputStream(urlConnection.getInputStream());
@@ -127,8 +125,10 @@ public class Main extends AppCompatActivity implements MediaPlayer.OnBufferingUp
           tvCurrentSong.setText(currentSong);
           //tvLastSongs.setInputType(InputType.TYPE_CLASS_TEXT);
           tvLastSongs.setText("- "+lastSongs);
-          if (progressBar.getVisibility() == progressBar.VISIBLE) {
-                        progressBar.setVisibility(ProgressBar.INVISIBLE);}
+          if (progressBar.getVisibility() == progressBar.VISIBLE  && mediaPlayer.isPlaying())
+          {
+             progressBar.setVisibility(ProgressBar.INVISIBLE);
+          }
       }
       private String getListOfLastSongsFromHTMLString(String str, String firstCut, String LastCut ,String delimiter, int cut){
           return str.substring(str.indexOf(firstCut)+cut, str.lastIndexOf(LastCut)).replace(delimiter, "\n- ");
